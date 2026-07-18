@@ -1,0 +1,44 @@
+PC criado pelo @alves7.pcm
+on:
+workflow_dispatch:
+inputs:
+instance_number:
+description: 'Instance Number (1-10)'
+required: true
+default: '1'
+type: string
+jobs:
+deploy-rdp:
+runs-on: windows-latest
+timeout-minutes: 360
+steps:
+- name: Checkout Repository
+uses: actions/checkout@v4
+- name: System Information
+run: |
+Write-Host "=== ENIGMANO RDP DEPLOYMENT ===" -ForegroundColor Green
+Write-Host "Instance Number: ${{ github.event.inputs.instance_number }}" -ForegroundColor Yellow
+Write-Host "Runner: $env:RUNNER_NAME" -ForegroundColor Yellow
+Write-Host "Workflow: $env:GITHUB_WORKFLOW" -ForegroundColor Yellow
+Write-Host "`n=== SYSTEM SPECIFICATIONS ===" -ForegroundColor Cyan
+Get-ComputerInfo | Select-Object WindowsProductName, WindowsVersion, TotalPhysicalMemory
+Get-WmiObject -Class Win32_Processor | Select-Object Name, NumberOfCores, NumberOfLogicalProcessors
+- name: Enable RDP
+run: |
+Write-Host "Enabling Remote Desktop..." -ForegroundColor Green
+Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
+Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
+- name: Create User Account
+run: |
+Write-Host "Setting up user account..." -ForegroundColor Green
+$Password = ConvertTo-SecureString "P@ssw0rd!" -AsPlainText -Force
+Set-LocalUser -Name "runneradmin" -Password $Password
+Add-LocalGroupMember -Group "Remote Desktop Users" -Member "runneradmin"
+Write-Host "Username: runneradmin" -ForegroundColor Yellow
+Write-Host "Password: P@ssw0rd!" -ForegroundColor Yellow
+- name: Install Tailscale (Silent)
+run: |
+Write-Host "Downloading Tailscale..." -ForegroundColor Green
+$tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
+$installerPath = "$env:TEMP\t
