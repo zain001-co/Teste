@@ -1,4 +1,4 @@
-:name: PC criado pelo @alves7.pcm
+PC criado pelo @alves7.pcm
 on:
 workflow_dispatch:
 inputs:
